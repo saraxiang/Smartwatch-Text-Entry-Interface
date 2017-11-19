@@ -1,6 +1,12 @@
 import java.util.Arrays;
 import java.util.Collections;
 
+// TODO: if drag off screen, don't type letter
+// TODO: mark where user first clicked (help gauge distance needed?)
+// TODO: tap "currentLetter" box to repeat a letter?
+// TODO: can create "rings" of distances to visually represent where finger needs to go for each letter after click
+// TODO: use phone rotation for delete/space
+
 String[] phrases; //contains all of the phrases
 int totalTrialNum = 4; //the total number of phrases to be tested - set this low for testing. Might be ~10 for the real bakeoff!
 int currTrialNum = 0; // the current trial number (indexes into trials array above)
@@ -16,8 +22,28 @@ final int DPIofYourDeviceScreen = 441; //you will need to look up the DPI or PPI
                                       //http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
 final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
 
-//Variables for my silly implementation. You can delete this:
-char currentLetter = 'a';
+char currentLetter = '\u0009';
+boolean clicked = false;
+int numSpaces = 2;
+int clickX = 0;
+int clickY = 0;
+int screenOffsetX = 200;
+int screenOffsetY = 200;
+int buttonWidth = int(sizeOfInputArea/2);
+int buttonHeight = int(sizeOfInputArea/4);
+
+
+private class Button
+{
+  int x = 0;
+  int y = 0;
+  int width = buttonWidth;
+  int height = buttonHeight;
+  String character = "";
+  boolean selected = false;
+}
+
+ArrayList<Button> buttons = new ArrayList<Button>();
 
 //You can modify anything in here. This is just a basic implementation.
 void setup()
@@ -29,6 +55,63 @@ void setup()
   size(1000, 1000); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
   textFont(createFont("Arial", 24)); //set the font to arial 24
   noStroke(); //my code doesn't use any strokes.
+  
+  // qwert; top left
+  Button b = new Button();
+    b.x = 0;
+    b.y = buttonHeight; //second row (of four)
+    b.character = "q w e r t";
+    buttons.add(b);
+    System.out.println("y is : " + b.y);
+
+  // asdfg; middle left
+  b = new Button();
+    b.x = 0;
+    b.y = buttonHeight * 2;
+    b.character = "a s d f g";
+    buttons.add(b);
+    System.out.println("next y is : " + b.y);
+    
+  // zxcv; bottom left
+  b = new Button();
+    b.x = 0;
+    b.y = buttonHeight * 3;
+    b.character = "z x c v";
+    buttons.add(b);
+    
+  // yuiop; top right
+  b = new Button();
+    b.x = buttonWidth;
+    b.y = buttonHeight;
+    b.character = "y u i o p";
+    buttons.add(b);
+
+  // hjkl; middle right
+  b = new Button();
+    b.x = buttonWidth;
+    b.y = buttonHeight * 2;
+    b.character = "h j k l";
+    buttons.add(b);
+    
+  // bnm; bottom right
+  b = new Button();
+    b.x = buttonWidth;
+    b.y = buttonHeight * 3;
+    b.character = "b n m";
+    buttons.add(b);
+
+  // delete button
+  b = new Button();
+    b.width = int(sizeOfInputArea/3);
+    b.character = "delete";
+    buttons.add(b);
+
+  // space button
+  b = new Button();
+    b.x = int(sizeOfInputArea/3) * 2;
+    b.width = int(sizeOfInputArea/3);
+    b.character = " ";
+    buttons.add(b);
 }
 
 //You can modify anything in here. This is just a basic implementation.
@@ -39,6 +122,31 @@ void draw()
  // image(watch,-200,200);
   fill(100);
   rect(200, 200, sizeOfInputArea, sizeOfInputArea); //input area should be 2" by 2"
+  
+  drawKeyboard();
+  textFont(createFont("Arial", 24)); //set the font to arial 24
+
+  // update + draw current letter
+  updateCurrentLetter();
+  if (startTime != 0) {
+    pushMatrix();
+    translate(screenOffsetX, screenOffsetY);
+    textAlign(CENTER);
+
+    strokeWeight(2);
+    stroke(255);
+
+    fill(255, 0, 0);
+    int third = int(sizeOfInputArea/3);
+    rect(third, 0, third, buttonHeight);
+
+    fill(255);
+    text(currentLetter, third * 1.5, 0 + buttonHeight/2);
+
+    noStroke();
+
+    popMatrix();
+  }
 
   if (finishTime!=0)
   {
@@ -73,14 +181,6 @@ void draw()
     rect(800, 00, 200, 200); //drag next button
     fill(255);
     text("NEXT > ", 850, 100); //draw next label
-
-    //my draw code
-    textAlign(CENTER);
-    text("" + currentLetter, 200+sizeOfInputArea/2, 200+sizeOfInputArea/3); //draw current letter
-    fill(255, 0, 0);
-    rect(200, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw left red button
-    fill(0, 255, 0);
-    rect(200+sizeOfInputArea/2, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw right green button
   }
   
 }
@@ -92,36 +192,134 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
 
 
 void mousePressed()
-{
+{  
+  if (startTime == 0) { return; }
+  
+  clicked = true;
 
-  if (didMouseClick(200, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2)) //check if click in left button
-  {
-    currentLetter --;
-    if (currentLetter<'_') //wrap around to z
-      currentLetter = 'z';
-  }
-
-  if (didMouseClick(200+sizeOfInputArea/2, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2)) //check if click in right button
-  {
-    currentLetter ++;
-    if (currentLetter>'z') //wrap back to space (aka underscore)
-      currentLetter = '_';
-  }
-
-  if (didMouseClick(200, 200, sizeOfInputArea, sizeOfInputArea/2)) //check if click occured in letter area
-  {
-    if (currentLetter=='_') //if underscore, consider that a space bar
-      currentTyped+=" ";
-    else if (currentLetter=='`' & currentTyped.length()>0) //if `, treat that as a delete command
-      currentTyped = currentTyped.substring(0, currentTyped.length()-1);
-    else if (currentLetter!='`') //if not any of the above cases, add the current letter to the typed string
-      currentTyped+=currentLetter;
-  }
+  clickX = mouseX;
+  clickY = mouseY;
+  checkSelected();
 
   //You are allowed to have a next button outside the 2" area
   if (didMouseClick(800, 00, 200, 200)) //check if click is in next button
   {
     nextTrial(); //if so, advance to next trial
+  }
+}
+
+void updateCurrentLetter() 
+{
+if (startTime == 0) { return; }
+// System.out.println("started");
+if (clicked == false) { return; }
+  for (int i=0; i<buttons.size(); i++) {
+    Button b = buttons.get(i);
+    if (b.selected) {
+      // System.out.println("selected: " + b.character);
+      if (b.character != "delete" && b.character != " ") {
+        int releaseX = mouseX;
+        int releaseY = mouseY;
+        
+        PVector v = new PVector(releaseX-clickX, releaseY-clickY);
+        float dragDistance = v.mag();
+        // System.out.println("mag is: " + dragDistance);
+        if (dragDistance < 50) {
+          currentLetter = b.character.charAt(0);
+        } else if (dragDistance < 100) {
+          currentLetter = b.character.charAt(1 * numSpaces);
+        } else if (dragDistance < 150) {
+          currentLetter = b.character.charAt(2 * numSpaces);
+        } else if (dragDistance < 200) {
+          // if there is no fourth char, do third
+          if (b.character.length() - 1 >= (3 * numSpaces)) {
+            currentLetter = b.character.charAt(3 * numSpaces);;
+          } else {
+            currentLetter = b.character.charAt(2 * numSpaces);
+          }
+        } else {
+          // if there is no fifth char, do fourth, if there is no fourth char, do third
+          if (b.character.length() - 1 >= (4 * numSpaces)) {
+            currentLetter = b.character.charAt(4 * numSpaces);
+          } else {
+            if (b.character.length() - 1 >= (3 * numSpaces)) {
+              currentLetter = b.character.charAt(3 * numSpaces);
+            } else {
+              currentLetter = b.character.charAt(2 * numSpaces);
+            }
+          }
+        }
+      }
+      break;
+    }
+  }
+}
+
+void mouseReleased() 
+{
+if (startTime == 0) { return; }
+clicked = false;
+currentLetter = '\u0009';
+
+  for (int i=0; i<buttons.size(); i++) {
+    Button b = buttons.get(i);
+    if (b.selected) {
+      b.selected = false;
+      if (b.character == "delete") {
+        if (currentTyped.length() > 0)
+          currentTyped = currentTyped.substring(0, currentTyped.length() - 1);
+      }
+      else if (b.character == " ") {
+        currentTyped += b.character;
+      }
+      else {
+        int releaseX = mouseX;
+        int releaseY = mouseY;
+        
+        PVector v = new PVector(releaseX-clickX, releaseY-clickY);
+        float dragDistance = v.mag();
+
+        if (dragDistance < 50) {
+          currentTyped += b.character.charAt(0);
+        } else if (dragDistance < 100) {
+          currentTyped += b.character.charAt(1 * numSpaces);
+        } else if (dragDistance < 150) {
+          currentTyped += b.character.charAt(2 * numSpaces);
+        } else if (dragDistance < 200) {
+          // if there is no fourth char, do third
+          if (b.character.length() - 1 >= (3 * numSpaces)) {
+            currentTyped += b.character.charAt(3 * numSpaces);;
+          } else {
+            currentTyped += b.character.charAt(2 * numSpaces);
+          }
+        } else {
+          // if there is no fifth char, do fourth, if there is no fourth char, do third
+          if (b.character.length() - 1 >= (4 * numSpaces)) {
+            currentTyped += b.character.charAt(4 * numSpaces);
+          } else {
+            if (b.character.length() - 1 >= (3 * numSpaces)) {
+              currentTyped += b.character.charAt(3 * numSpaces);
+            } else {
+              currentTyped += b.character.charAt(2 * numSpaces);
+            }
+          }
+        }
+      }
+      break;
+    }
+  }
+}
+
+void checkSelected() {
+  for (int i=0; i<buttons.size(); i++) {
+    Button b = buttons.get(i);
+    
+    b.selected = false;
+    int transformedMouseX = int(mouseX - screenOffsetX);
+    int transformedMouseY = int(mouseY - screenOffsetY);
+    if (transformedMouseX >= b.x && transformedMouseX < b.x+b.width && transformedMouseY >= b.y && transformedMouseY < b.y+b.height) {
+      b.selected = true;
+    }
   }
 }
 
@@ -208,4 +406,27 @@ int computeLevenshteinDistance(String phrase1, String phrase2) //this computers 
       distance[i][j] = min(min(distance[i - 1][j] + 1, distance[i][j - 1] + 1), distance[i - 1][j - 1] + ((phrase1.charAt(i - 1) == phrase2.charAt(j - 1)) ? 0 : 1));
 
   return distance[phrase1.length()][phrase2.length()];
+}
+
+void drawKeyboard() {
+  if (startTime == 0) { return; }
+
+  pushMatrix();
+  translate(screenOffsetX, screenOffsetY);
+  strokeWeight(2);
+  stroke(255);
+  textAlign(CENTER);
+  for(int i=0; i<buttons.size(); i++) {
+    Button b = buttons.get(i);
+    fill(255, 0, 0);
+    if (b.selected) {
+      fill(0, 255, 0);
+    }
+    rect(b.x, b.y, b.width, b.height);
+    fill(255);
+    text(b.character, b.x + b.width/2, b.y + b.height/2);
+  }
+  popMatrix();
+
+  noStroke();
 }
