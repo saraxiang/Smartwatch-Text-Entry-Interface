@@ -1,6 +1,12 @@
 import java.util.Arrays;
 import java.util.Collections;
 
+// TODO: if drag off screen, don't type letter
+// TODO: mark where user first clicked (help gauge distance needed?)
+// TODO: tap "currentLetter" box to repeat a letter?
+// TODO: can create "rings" of distances to visually represent where finger needs to go for each letter after click
+// TODO: use phone rotation for delete/space
+
 String[] phrases; //contains all of the phrases
 int totalTrialNum = 4; //the total number of phrases to be tested - set this low for testing. Might be ~10 for the real bakeoff!
 int currTrialNum = 0; // the current trial number (indexes into trials array above)
@@ -16,15 +22,16 @@ final int DPIofYourDeviceScreen = 441; //you will need to look up the DPI or PPI
                                       //http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
 final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
 
-//Variables for my silly implementation. You can delete this:
-char currentLetter = 'a';
-
+char currentLetter = '\u0009';
+boolean clicked = false;
+int numSpaces = 2;
 int clickX = 0;
 int clickY = 0;
 int screenOffsetX = 200;
 int screenOffsetY = 200;
 int buttonWidth = int(sizeOfInputArea/2);
 int buttonHeight = int(sizeOfInputArea/4);
+
 
 private class Button
 {
@@ -57,7 +64,7 @@ void setup()
     buttons.add(b);
     System.out.println("y is : " + b.y);
 
- // asdfg; middle left
+  // asdfg; middle left
   b = new Button();
     b.x = 0;
     b.y = buttonHeight * 2;
@@ -65,14 +72,14 @@ void setup()
     buttons.add(b);
     System.out.println("next y is : " + b.y);
     
- // zxcv; bottom left
+  // zxcv; bottom left
   b = new Button();
     b.x = 0;
     b.y = buttonHeight * 3;
     b.character = "z x c v";
     buttons.add(b);
     
-   // yuiop; top right
+  // yuiop; top right
   b = new Button();
     b.x = buttonWidth;
     b.y = buttonHeight;
@@ -86,11 +93,24 @@ void setup()
     b.character = "h j k l";
     buttons.add(b);
     
-   // bnm; bottom right
+  // bnm; bottom right
   b = new Button();
     b.x = buttonWidth;
     b.y = buttonHeight * 3;
     b.character = "b n m";
+    buttons.add(b);
+
+  // delete button
+  b = new Button();
+    b.width = int(sizeOfInputArea/3);
+    b.character = "delete";
+    buttons.add(b);
+
+  // space button
+  b = new Button();
+    b.x = int(sizeOfInputArea/3) * 2;
+    b.width = int(sizeOfInputArea/3);
+    b.character = " ";
     buttons.add(b);
 }
 
@@ -105,6 +125,28 @@ void draw()
   
   drawKeyboard();
   textFont(createFont("Arial", 24)); //set the font to arial 24
+
+  // update + draw current letter
+  updateCurrentLetter();
+  if (startTime != 0) {
+    pushMatrix();
+    translate(screenOffsetX, screenOffsetY);
+    textAlign(CENTER);
+
+    strokeWeight(2);
+    stroke(255);
+
+    fill(255, 0, 0);
+    int third = int(sizeOfInputArea/3);
+    rect(third, 0, third, buttonHeight);
+
+    fill(255);
+    text(currentLetter, third * 1.5, 0 + buttonHeight/2);
+
+    noStroke();
+
+    popMatrix();
+  }
 
   if (finishTime!=0)
   {
@@ -153,6 +195,8 @@ void mousePressed()
 {  
   if (startTime == 0) { return; }
   
+  clicked = true;
+
   clickX = mouseX;
   clickY = mouseY;
   checkSelected();
@@ -164,13 +208,63 @@ void mousePressed()
   }
 }
 
-void mouseReleased() 
+void updateCurrentLetter() 
 {
 if (startTime == 0) { return; }
-  
+// System.out.println("started");
+if (clicked == false) { return; }
   for (int i=0; i<buttons.size(); i++) {
     Button b = buttons.get(i);
     if (b.selected) {
+      // System.out.println("selected: " + b.character);
+      if (b.character != "delete" && b.character != " ") {
+        int releaseX = mouseX;
+        int releaseY = mouseY;
+        
+        PVector v = new PVector(releaseX-clickX, releaseY-clickY);
+        float dragDistance = v.mag();
+        // System.out.println("mag is: " + dragDistance);
+        if (dragDistance < 50) {
+          currentLetter = b.character.charAt(0);
+        } else if (dragDistance < 100) {
+          currentLetter = b.character.charAt(1 * numSpaces);
+        } else if (dragDistance < 150) {
+          currentLetter = b.character.charAt(2 * numSpaces);
+        } else if (dragDistance < 200) {
+          // if there is no fourth char, do third
+          if (b.character.length() - 1 >= (3 * numSpaces)) {
+            currentLetter = b.character.charAt(3 * numSpaces);;
+          } else {
+            currentLetter = b.character.charAt(2 * numSpaces);
+          }
+        } else {
+          // if there is no fifth char, do fourth, if there is no fourth char, do third
+          if (b.character.length() - 1 >= (4 * numSpaces)) {
+            currentLetter = b.character.charAt(4 * numSpaces);
+          } else {
+            if (b.character.length() - 1 >= (3 * numSpaces)) {
+              currentLetter = b.character.charAt(3 * numSpaces);
+            } else {
+              currentLetter = b.character.charAt(2 * numSpaces);
+            }
+          }
+        }
+      }
+      break;
+    }
+  }
+}
+
+void mouseReleased() 
+{
+if (startTime == 0) { return; }
+clicked = false;
+currentLetter = '\u0009';
+
+  for (int i=0; i<buttons.size(); i++) {
+    Button b = buttons.get(i);
+    if (b.selected) {
+      b.selected = false;
       if (b.character == "delete") {
         if (currentTyped.length() > 0)
           currentTyped = currentTyped.substring(0, currentTyped.length() - 1);
@@ -182,11 +276,36 @@ if (startTime == 0) { return; }
         int releaseX = mouseX;
         int releaseY = mouseY;
         
-        // TODO: calculate the length of this vector to determine letter typed
-        PVector v2 = new PVector(releaseX-clickX, releaseY-clickY);
+        PVector v = new PVector(releaseX-clickX, releaseY-clickY);
+        float dragDistance = v.mag();
 
-        currentTyped += b.character;
+        if (dragDistance < 50) {
+          currentTyped += b.character.charAt(0);
+        } else if (dragDistance < 100) {
+          currentTyped += b.character.charAt(1 * numSpaces);
+        } else if (dragDistance < 150) {
+          currentTyped += b.character.charAt(2 * numSpaces);
+        } else if (dragDistance < 200) {
+          // if there is no fourth char, do third
+          if (b.character.length() - 1 >= (3 * numSpaces)) {
+            currentTyped += b.character.charAt(3 * numSpaces);;
+          } else {
+            currentTyped += b.character.charAt(2 * numSpaces);
+          }
+        } else {
+          // if there is no fifth char, do fourth, if there is no fourth char, do third
+          if (b.character.length() - 1 >= (4 * numSpaces)) {
+            currentTyped += b.character.charAt(4 * numSpaces);
+          } else {
+            if (b.character.length() - 1 >= (3 * numSpaces)) {
+              currentTyped += b.character.charAt(3 * numSpaces);
+            } else {
+              currentTyped += b.character.charAt(2 * numSpaces);
+            }
+          }
+        }
       }
+      break;
     }
   }
 }
@@ -196,13 +315,10 @@ void checkSelected() {
     Button b = buttons.get(i);
     
     b.selected = false;
-    // TODO: why is testing for mousePressed necessary here?
-    if (mousePressed) {
-      int transformedMouseX = int(mouseX - screenOffsetX);
-      int transformedMouseY = int(mouseY - screenOffsetY);
-      if (transformedMouseX >= b.x && transformedMouseX < b.x+b.width && transformedMouseY >= b.y && transformedMouseY < b.y+b.height) {
-        b.selected = true;
-      }
+    int transformedMouseX = int(mouseX - screenOffsetX);
+    int transformedMouseY = int(mouseY - screenOffsetY);
+    if (transformedMouseX >= b.x && transformedMouseX < b.x+b.width && transformedMouseY >= b.y && transformedMouseY < b.y+b.height) {
+      b.selected = true;
     }
   }
 }
