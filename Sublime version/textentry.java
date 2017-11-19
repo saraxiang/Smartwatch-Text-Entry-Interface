@@ -63,26 +63,26 @@ void setup()
     buttons.add(b);
     System.out.println("next y is : " + b.y);
     
- // // zxcv; bottom left
- //  b = new Button();
- //    b.x = 0;
- //    b.y = buttonHeight * 3;
- //    b.character = "z x c v";
- //    buttons.add(b);
+ // zxcv; bottom left
+  b = new Button();
+    b.x = 0;
+    b.y = buttonHeight * 3;
+    b.character = "z x c v";
+    buttons.add(b);
     
- //   // yuiop; top right
- //  b = new Button();
- //    b.x = buttonWidth;
- //    b.y = buttonHeight;
- //    b.character = "y u i o p";
- //    buttons.add(b);
+   // yuiop; top right
+  b = new Button();
+    b.x = buttonWidth;
+    b.y = buttonHeight;
+    b.character = "y u i o p";
+    buttons.add(b);
 
- //  // hjkl; middle right
- //  b = new Button();
- //    b.x = buttonWidth;
- //    b.y = buttonHeight * 2;
- //    b.character = "h j k l";
- //    buttons.add(b);
+  // hjkl; middle right
+  b = new Button();
+    b.x = buttonWidth;
+    b.y = buttonHeight * 2;
+    b.character = "h j k l";
+    buttons.add(b);
     
    // bnm; bottom right
   b = new Button();
@@ -137,14 +137,6 @@ void draw()
     rect(800, 00, 200, 200); //drag next button
     fill(255);
     text("NEXT > ", 850, 100); //draw next label
-
-    //my draw code
-    textAlign(CENTER);
-    text("" + currentLetter, 200+sizeOfInputArea/2, 200+sizeOfInputArea/3); //draw current letter
-    fill(255, 0, 0);
-    rect(200, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw left red button
-    fill(0, 255, 0);
-    rect(200+sizeOfInputArea/2, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw right green button
   }
   
 }
