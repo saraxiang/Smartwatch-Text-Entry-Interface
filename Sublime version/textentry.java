@@ -19,6 +19,8 @@ final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
 //Variables for my silly implementation. You can delete this:
 char currentLetter = 'a';
 
+int clickX = 0;
+int clickY = 0;
 int screenOffsetX = 200;
 int screenOffsetY = 200;
 int buttonWidth = int(sizeOfInputArea/2);
@@ -148,14 +150,60 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
 
 
 void mousePressed()
-{
-  System.out.println("clicked y: " + mouseY);
+{  
+  if (startTime == 0) { return; }
   
+  clickX = mouseX;
+  clickY = mouseY;
+  checkSelected();
 
   //You are allowed to have a next button outside the 2" area
   if (didMouseClick(800, 00, 200, 200)) //check if click is in next button
   {
     nextTrial(); //if so, advance to next trial
+  }
+}
+
+void mouseReleased() 
+{
+if (startTime == 0) { return; }
+  
+  for (int i=0; i<buttons.size(); i++) {
+    Button b = buttons.get(i);
+    if (b.selected) {
+      if (b.character == "delete") {
+        if (currentTyped.length() > 0)
+          currentTyped = currentTyped.substring(0, currentTyped.length() - 1);
+      }
+      else if (b.character == " ") {
+        currentTyped += b.character;
+      }
+      else {
+        int releaseX = mouseX;
+        int releaseY = mouseY;
+        
+        // TODO: calculate the length of this vector to determine letter typed
+        PVector v2 = new PVector(releaseX-clickX, releaseY-clickY);
+
+        currentTyped += b.character;
+      }
+    }
+  }
+}
+
+void checkSelected() {
+  for (int i=0; i<buttons.size(); i++) {
+    Button b = buttons.get(i);
+    
+    b.selected = false;
+    // TODO: why is testing for mousePressed necessary here?
+    if (mousePressed) {
+      int transformedMouseX = int(mouseX - screenOffsetX);
+      int transformedMouseY = int(mouseY - screenOffsetY);
+      if (transformedMouseX >= b.x && transformedMouseX < b.x+b.width && transformedMouseY >= b.y && transformedMouseY < b.y+b.height) {
+        b.selected = true;
+      }
+    }
   }
 }
 
