@@ -63,26 +63,26 @@ void setup()
     buttons.add(b);
     System.out.println("next y is : " + b.y);
     
- // zxcv; bottom left
-  b = new Button();
-    b.x = 0;
-    b.y = buttonHeight * 3;
-    b.character = "z x c v";
-    buttons.add(b);
+ // // zxcv; bottom left
+ //  b = new Button();
+ //    b.x = 0;
+ //    b.y = buttonHeight * 3;
+ //    b.character = "z x c v";
+ //    buttons.add(b);
     
-   // yuiop; top right
-  b = new Button();
-    b.x = buttonWidth;
-    b.y = buttonHeight;
-    b.character = "y u i o p";
-    buttons.add(b);
+ //   // yuiop; top right
+ //  b = new Button();
+ //    b.x = buttonWidth;
+ //    b.y = buttonHeight;
+ //    b.character = "y u i o p";
+ //    buttons.add(b);
 
-  // hjkl; middle right
-  b = new Button();
-    b.x = buttonWidth;
-    b.y = buttonHeight * 2;
-    b.character = "h j k l";
-    buttons.add(b);
+ //  // hjkl; middle right
+ //  b = new Button();
+ //    b.x = buttonWidth;
+ //    b.y = buttonHeight * 2;
+ //    b.character = "h j k l";
+ //    buttons.add(b);
     
    // bnm; bottom right
   b = new Button();
